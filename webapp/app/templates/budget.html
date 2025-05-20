@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+{% block title %}Budget{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Budget Planning</h1>
+
+    <!-- Alerts Section -->
+    {% if alerts %}
+    <div class="row mb-4">
+        <div class="col-12">
+            {% for alert in alerts %}
+            <div class="alert alert-{{ alert.type }} alert-dismissible fade show" role="alert">
+                {{ alert.message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Budget Overview -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Monthly Budget Overview</h5>
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-1">Total Planned</p>
+                            <h3>{{ "{:,.0f}".format(total_planned) }} VND</h3>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-1">Total Actual</p>
+                            <h3>{{ "{:,.0f}".format(total_actual) }} VND</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Budget Categories -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Budget Categories</h5>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#newBudgetModal">
+                            <i class="fa fa-plus"></i> Set Budget
+                        </button>
+                    </div>
+
+                    {% if budget_data %}
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Planned</th>
+                                    <th>Actual</th>
+                                    <th>Remaining</th>
+                                    <th>Usage</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for budget in budget_data %}
+                                <tr>
+                                    <td>{{ budget.category }}</td>
+                                    <td>{{ "{:,.0f}".format(budget.planned) }} VND</td>
+                                    <td>{{ "{:,.0f}".format(budget.actual) }} VND</td>
+                                    <td>{{ "{:,.0f}".format(budget.remaining) }} VND</td>
+                                    <td>
+                                        <div class="progress">
+                                            <div class="progress-bar {% if budget.usage_percent > 100 %}bg-danger{% elif budget.usage_percent > 90 %}bg-warning{% else %}bg-success{% endif %}"
+                                                role="progressbar" style="width: {{ min(100, budget.usage_percent) }}%">
+                                                {{ "%.1f"|format(budget.usage_percent) }}%
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        {% if budget.usage_percent > 100 %}
+                                        <span class="badge badge-danger">Over Budget</span>
+                                        {% elif budget.usage_percent > 90 %}
+                                        <span class="badge badge-warning">Near Limit</span>
+                                        {% else %}
+                                        <span class="badge badge-success">On Track</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No budgets set for this month. Click "Set Budget" to get started.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Saving Goals -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="card-title mb-0">Saving Goals</h5>
+                        <button class="btn btn-primary" data-toggle="modal" data-target="#newSavingGoalModal">
+                            <i class="fa fa-plus"></i> Add Goal
+                        </button>
+                    </div>
+
+                    {% if goals_data %}
+                    <div class="row">
+                        {% for goal in goals_data %}
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body">
+                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                        <h6 class="card-title mb-0">{{ goal.name }}</h6>
+                                        <button class="btn btn-link text-danger p-0" onclick="deleteGoal({{ goal.id }})"
+                                            title="Delete Goal">
+                                            <i class="fa fa-times"></i>
+                                        </button>
+                                    </div>
+
+                                    <div class="progress mb-3">
+                                        <div class="progress-bar {% if goal.progress < 70 %}bg-warning{% else %}bg-success{% endif %}"
+                                            role="progressbar" style="width: {{ goal.progress }}%">
+                                            {{ "%.1f"|format(goal.progress) }}%
+                                        </div>
+                                    </div>
+
+                                    <div class="goal-details">
+                                        <p class="mb-2">
+                                            <strong>Target Amount:</strong><br>
+                                            {{ "{:,.0f}".format(goal.total_amount) }} VND
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Current Savings:</strong><br>
+                                            {{ "{:,.0f}".format(goal.current_savings) }} VND
+                                        </p>
+                                        <p class="mb-2">
+                                            <strong>Monthly Required:</strong><br>
+                                            {{ "{:,.0f}".format(goal.monthly_required) }} VND
+                                        </p>
+                                        {% if goal.saving_gap > 0 %}
+                                        <p class="mb-2 text-danger">
+                                            <strong>Monthly Saving Gap:</strong><br>
+                                            {{ "{:,.0f}".format(goal.saving_gap) }} VND
+                                        </p>
+                                        {% endif %}
+                                        <p class="mb-2">
+                                            <strong>Timeline:</strong><br>
+                                            {{ goal.start_date.strftime('%d %b %Y') }} - {{
+                                            goal.target_date.strftime('%d %b %Y') }}
+                                        </p>
+                                    </div>
+
+                                    <div class="mt-3">
+                                        {% if goal.on_track %}
+                                        <span class="badge badge-success">On Track</span>
+                                        {% else %}
+                                        <span class="badge badge-warning">Behind Schedule</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <p class="text-muted">No saving goals yet. Click "Add Goal" to create one.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- New Budget Modal -->
+<div class="modal fade" id="newBudgetModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Set Monthly Budget</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="category">Category</label>
+                        <select class="form-control" id="category" name="category" required>
+                            {% for category in categories %}
+                            <option value="{{ category }}">{{ category }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="month">Month</label>
+                        <input type="month" class="form-control" id="month" name="month" value="{{ current_month }}"
+                            required>
+                    </div>
+                    <div class="form-group">
+                        <label for="planned_amount">Planned Amount (VND)</label>
+                        <input type="text" class="form-control" id="planned_amount" name="planned_amount" required
+                            pattern="[0-9,]*" inputmode="numeric" oninput="formatNumber(this)">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- New Saving Goal Modal -->
+<div class="modal fade" id="newSavingGoalModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Add Saving Goal</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="POST" action="{{ url_for('views.add_saving_goal') }}">
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="name">Goal Name</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="total_amount">Target Amount (VND)</label>
+                        <input type="text" class="form-control" id="total_amount" name="total_amount" required
+                            pattern="[0-9,]*" inputmode="numeric" oninput="formatNumber(this)">
+                    </div>
+                    <div class="form-group">
+                        <label for="start_date">Start Date</label>
+                        <input type="date" class="form-control" id="start_date" name="start_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="target_date">Target Date</label>
+                        <input type="date" class="form-control" id="target_date" name="target_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="past_savings">Past Savings (VND) <span class="text-muted">(Optional)</span></label>
+                        <input type="text" class="form-control" id="past_savings" name="past_savings"
+                            inputmode="numeric" oninput="formatNumber(this)" placeholder="0">
+                        <small class="form-text text-muted">If you already have some savings for this goal, enter the
+                            amount here. Leave empty if none.</small>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Goal</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Format number inputs with commas
+    function formatNumber(input) {
+        let value = input.value.replace(/[^\d,]/g, '');
+        value = value.replace(/,/g, '');
+        value = value.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        input.value = value;
+    }
+
+    // Set minimum dates for saving goal inputs
+    document.addEventListener('DOMContentLoaded', function () {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').min = today;
+        document.getElementById('target_date').min = today;
+
+        // Handle saving goal form submission
+        document.querySelector('#newSavingGoalModal form').addEventListener('submit', function (e) {
+            e.preventDefault(); // Prevent default form submission
+
+            // Remove commas from amount inputs before submitting
+            const totalAmountInput = document.getElementById('total_amount');
+            const pastSavingsInput = document.getElementById('past_savings');
+            const formData = new FormData(this);
+
+            // Update form data with comma-removed values
+            formData.set('total_amount', totalAmountInput.value.replace(/,/g, ''));
+            if (pastSavingsInput.value) {
+                formData.set('past_savings', pastSavingsInput.value.replace(/,/g, ''));
+            }
+
+            // Submit form via fetch
+            fetch(this.action, {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => {
+                    if (response.ok) {
+                        // Close modal and reload page on success
+                        $('#newSavingGoalModal').modal('hide');
+                        window.location.reload();
+                    } else {
+                        throw new Error('Failed to add saving goal');
+                    }
+                })
+                .catch(error => {
+                    alert('Error adding saving goal: ' + error);
+                });
+        });
+
+        // Reset form when modal is closed
+        $('#newSavingGoalModal').on('hidden.bs.modal', function () {
+            document.querySelector('#newSavingGoalModal form').reset();
+        });
+    });
+
+    // Ensure target date is after start date
+    document.getElementById('start_date').addEventListener('change', function () {
+        document.getElementById('target_date').min = this.value;
+    });
+
+    // Delete goal function
+    function deleteGoal(goalId) {
+        if (confirm('Are you sure you want to delete this saving goal?')) {
+            fetch('/delete-saving-goal', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ goalId: goalId })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error deleting goal: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    alert('Error deleting goal: ' + error);
+                });
+        }
+    }
+</script>
+{% endblock %}

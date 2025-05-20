@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="container-fluid">
+    <h1 class="mb-4">Financial Dashboard</h1>
+
+    <div class="row">
+        <!-- Summary Cards -->
+        <div class="col-md-3">
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Total Income</h5>
+                    <h3 class="card-text text-dark">{{ total_income }} VND</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Total Expenses</h5>
+                    <h3 class="card-text text-dark">{{ total_expense }} VND</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-dark">Total Savings</h5>
+                    <h3 class="card-text text-dark">{{ total_savings }} VND</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-light mb-4">
+                <div class="card-body">
+                    <h5 class="card-title {% if is_positive %}text-success{% else %}text-danger{% endif %}">Net Balance
+                    </h5>
+                    <h3 class="card-text {% if is_positive %}text-success{% else %}text-danger{% endif %}">{{
+                        net_balance }} VND</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Charts will go here -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Income vs Expenses vs Savings</h5>
+                    <p class="card-text">Chart coming soon...</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Category Breakdown</h5>
+                    <p class="card-text">Chart coming soon...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
